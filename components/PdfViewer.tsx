@@ -60,69 +60,6 @@ export default function PdfViewer({ token }: Props) {
     await search(term, pages);
   }
 
-  // 핀치줌: ref로만 추적, DOM 직접 조작, 끝나면 scale 업데이트
-  const lastDistRef = useRef<number | null>(null);
-  const scaleRef = useRef(scale);
-  const pinchRatioRef = useRef(1);
-  const pinchBaseScaleRef = useRef(scale);
-
-  useEffect(() => {
-    scaleRef.current = scale;
-  }, [scale]);
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-
-    function getDistance(touches: TouchList) {
-      const dx = touches[0].clientX - touches[1].clientX;
-      const dy = touches[0].clientY - touches[1].clientY;
-      return Math.sqrt(dx * dx + dy * dy);
-    }
-
-    function onTouchStart(e: TouchEvent) {
-      if (e.touches.length === 2) {
-        lastDistRef.current = getDistance(e.touches);
-        pinchBaseScaleRef.current = scaleRef.current;
-        pinchRatioRef.current = 1;
-      }
-    }
-
-    function onTouchMove(e: TouchEvent) {
-      if (e.touches.length !== 2) return;
-      e.preventDefault();
-
-      const dist = getDistance(e.touches);
-      if (lastDistRef.current !== null) {
-        pinchRatioRef.current = dist / lastDistRef.current;
-        el!.style.transform = `scale(${pinchRatioRef.current})`;
-        el!.style.transformOrigin = 'center top';
-      }
-    }
-
-    function onTouchEnd() {
-      if (lastDistRef.current !== null) {
-        el!.style.transform = '';
-        const finalScale =
-          pinchBaseScaleRef.current * pinchRatioRef.current;
-        setScale(finalScale);
-        lastDistRef.current = null;
-        pinchRatioRef.current = 1;
-      }
-    }
-
-    el.addEventListener('touchstart', onTouchStart, {
-      passive: true,
-    });
-    el.addEventListener('touchmove', onTouchMove, { passive: false });
-    el.addEventListener('touchend', onTouchEnd);
-    return () => {
-      el.removeEventListener('touchstart', onTouchStart);
-      el.removeEventListener('touchmove', onTouchMove);
-      el.removeEventListener('touchend', onTouchEnd);
-    };
-  }, [setScale]);
-
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen text-center px-4">

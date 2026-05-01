@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, KeyboardEvent } from "react";
+import { useState, FormEvent, KeyboardEvent } from "react";
 
 interface Props {
   currentPage: number;
@@ -28,8 +28,8 @@ export default function Toolbar({
   const [pageInput, setPageInput] = useState("");
   const [searchInput, setSearchInput] = useState("");
 
-  function handlePageSubmit(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key !== "Enter") return;
+  function handlePageSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
     const num = parseInt(pageInput, 10);
     if (num >= 1 && num <= totalPages) {
       onGoToPage(num);
@@ -37,10 +37,14 @@ export default function Toolbar({
     setPageInput("");
   }
 
-  function handleSearchSubmit(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Enter") {
+  function handleSearchSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (searchInput.trim()) {
       onSearch(searchInput);
     }
+  }
+
+  function handleSearchKeyDown(e: KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Escape") {
       setSearchInput("");
       onClearSearch();
@@ -74,42 +78,43 @@ export default function Toolbar({
       <div className="w-px h-5 bg-gray-500" />
 
       {/* 페이지 이동 */}
-      <div className="flex items-center gap-1 text-sm">
+      <form onSubmit={handlePageSubmit} className="flex items-center gap-1 text-sm">
         <input
           type="number"
           value={pageInput}
           onChange={(e) => setPageInput(e.target.value)}
-          onKeyDown={handlePageSubmit}
           placeholder={String(currentPage)}
           className="w-12 bg-gray-700 text-white text-center rounded px-1 py-0.5"
           min={1}
           max={totalPages}
         />
         <span>/ {totalPages}</span>
-      </div>
+      </form>
 
       {/* 구분선 */}
       <div className="w-px h-5 bg-gray-500" />
 
       {/* 검색 */}
-      <div className="flex items-center gap-1">
+      <form onSubmit={handleSearchSubmit} className="flex items-center gap-1">
         <input
-          type="text"
+          type="search"
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
-          onKeyDown={handleSearchSubmit}
-          placeholder="검색 (Enter)"
+          onKeyDown={handleSearchKeyDown}
+          placeholder="검색"
+          enterKeyHint="search"
           className="bg-gray-700 text-white rounded px-2 py-0.5 text-sm w-36"
         />
         {searchInput && (
           <button
+            type="button"
             onClick={() => { setSearchInput(""); onClearSearch(); }}
             className="text-gray-400 hover:text-white text-sm"
           >
             ✕
           </button>
         )}
-      </div>
+      </form>
     </div>
   );
 }
