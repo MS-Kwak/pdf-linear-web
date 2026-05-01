@@ -53,11 +53,11 @@ export function useSearch() {
       for (let i = 0; i < pages.length; i++) {
         const page = pages[i];
 
-        // 캐시된 텍스트로 먼저 해당 페이지에 매치가 있는지 빠르게 확인
-        const cached = textCache?.find((c) => c.pageIndex === i);
-        if (cached && !cached.text.toLowerCase().includes(lower)) {
-          continue; // 이 페이지에는 매치 없음 → 건너뛰기
-        }
+      // 캐시된 텍스트로 먼저 해당 페이지에 매치가 있는지 빠르게 확인
+      const cached = textCache?.find((c) => c.pageIndex === i);
+      if (cached && cached.text.length > 0 && !cached.text.toLowerCase().includes(lower)) {
+        continue; // 이 페이지에는 확실히 매치 없음 → 건너뛰기
+      }
 
         // 매치가 있거나 캐시가 없는 경우, 상세 위치 추출을 위해 getTextContent 호출
         let textContent;
