@@ -29,7 +29,6 @@ export default function PdfViewer({ token }: Props) {
   const [tocOpen, setTocOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // 첫 페이지 로드 후 화면 폭에 맞는 초기 scale 자동 계산
   useEffect(() => {
     if (pages.length === 0) return;
 
@@ -38,7 +37,6 @@ export default function PdfViewer({ token }: Props) {
     const containerWidth =
       containerRef.current?.clientWidth ?? window.innerWidth;
 
-    // PDF 페이지 폭이 컨테이너보다 크면 맞게 줄임, 작으면 1.0 유지
     const fitScale = Math.min(
       containerWidth / naturalViewport.width,
       1.0,
@@ -46,7 +44,6 @@ export default function PdfViewer({ token }: Props) {
     setScale(fitScale);
   }, [pages.length > 0]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // 특정 페이지로 스크롤
   function goToPage(pageNumber: number) {
     const el = document.getElementById(`page-${pageNumber}`);
     if (el) {
@@ -63,11 +60,11 @@ export default function PdfViewer({ token }: Props) {
     await search(term, pages);
   }
 
-  // 핀치줌: 제스처 중에는 CSS transform으로 미리보기, 끝나면 canvas 재렌더
+  // 핀치줌: ref로만 추적, DOM 직접 조작, 끝나면 scale 업데이트
   const lastDistRef = useRef<number | null>(null);
   const scaleRef = useRef(scale);
+  const pinchRatioRef = useRef(1);
   const pinchBaseScaleRef = useRef(scale);
-  const [pinchTransform, setPinchTransform] = useState(1);
 
   useEffect(() => {
     scaleRef.current = scale;
@@ -87,6 +84,7 @@ export default function PdfViewer({ token }: Props) {
       if (e.touches.length === 2) {
         lastDistRef.current = getDistance(e.touches);
         pinchBaseScaleRef.current = scaleRef.current;
+        pinchRatioRef.current = 1;
       }
     }
 
@@ -96,17 +94,20 @@ export default function PdfViewer({ token }: Props) {
 
       const dist = getDistance(e.touches);
       if (lastDistRef.current !== null) {
-        const ratio = dist / lastDistRef.current;
-        setPinchTransform(ratio);
+        pinchRatioRef.current = dist / lastDistRef.current;
+        el!.style.transform = `scale(${pinchRatioRef.current})`;
+        el!.style.transformOrigin = 'center top';
       }
     }
 
-    function onTouchEnd(e: TouchEvent) {
-      if (e.touches.length === 0 && lastDistRef.current !== null) {
-        const finalScale = pinchBaseScaleRef.current * pinchTransform;
-        setPinchTransform(1);
+    function onTouchEnd() {
+      if (lastDistRef.current !== null) {
+        el!.style.transform = '';
+        const finalScale =
+          pinchBaseScaleRef.current * pinchRatioRef.current;
         setScale(finalScale);
         lastDistRef.current = null;
+        pinchRatioRef.current = 1;
       }
     }
 
@@ -120,7 +121,7 @@ export default function PdfViewer({ token }: Props) {
       el.removeEventListener('touchmove', onTouchMove);
       el.removeEventListener('touchend', onTouchEnd);
     };
-  }, [setScale, pinchTransform]);
+  }, [setScale]);
 
   if (error) {
     return (
@@ -167,14 +168,7 @@ export default function PdfViewer({ token }: Props) {
         }}
       />
 
-      <div
-        ref={containerRef}
-        className="pt-12 pb-8 px-2"
-        style={{
-          transform: `scale(${pinchTransform})`,
-          transformOrigin: 'center top',
-        }}
-      >
+      <div ref={containerRef} className="pt-12 pb-8 px-2">
         {pages.map((page, i) => {
           const pageNumber = i + 1;
           return (
