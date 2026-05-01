@@ -6,6 +6,7 @@ interface Props {
   currentPage: number;
   totalPages: number;
   scale: number;
+  searchCount: number;
   onZoomIn: () => void;
   onZoomOut: () => void;
   onGoToPage: (page: number) => void;
@@ -18,6 +19,7 @@ export default function Toolbar({
   currentPage,
   totalPages,
   scale,
+  searchCount,
   onZoomIn,
   onZoomOut,
   onGoToPage,
@@ -27,6 +29,7 @@ export default function Toolbar({
 }: Props) {
   const [pageInput, setPageInput] = useState('');
   const [searchInput, setSearchInput] = useState('');
+  const [searched, setSearched] = useState(false);
 
   function handlePageSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -37,16 +40,22 @@ export default function Toolbar({
     setPageInput('');
   }
 
-  function handleSearchSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  function doSearch() {
     if (searchInput.trim()) {
       onSearch(searchInput);
+      setSearched(true);
     }
+  }
+
+  function handleSearchSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    doSearch();
   }
 
   function handleSearchKeyDown(e: KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Escape') {
       setSearchInput('');
+      setSearched(false);
       onClearSearch();
     }
   }
@@ -111,25 +120,35 @@ export default function Toolbar({
         className="flex items-center gap-1"
       >
         <input
-          type="search"
+          type="text"
           value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
+          onChange={(e) => {
+            setSearchInput(e.target.value);
+            setSearched(false);
+          }}
           onKeyDown={handleSearchKeyDown}
           placeholder="검색"
           enterKeyHint="search"
           className="bg-gray-700 text-white rounded px-2 py-0.5 text-sm w-28"
         />
         <button
-          type="submit"
-          className="bg-blue-600 hover:bg-blue-500 text-white text-sm px-2 py-0.5 rounded"
+          type="button"
+          onClick={doSearch}
+          className="bg-blue-600 active:bg-blue-400 text-white text-sm px-2 py-0.5 rounded"
         >
           검색
         </button>
+        {searched && (
+          <span className="text-xs text-yellow-300">
+            {searchCount}건
+          </span>
+        )}
         {searchInput && (
           <button
             type="button"
             onClick={() => {
               setSearchInput('');
+              setSearched(false);
               onClearSearch();
             }}
             className="text-gray-400 hover:text-white text-sm"

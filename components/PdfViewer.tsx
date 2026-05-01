@@ -44,7 +44,7 @@ export default function PdfViewer({ token }: Props) {
     );
     setScale(fitScale);
     initialScaleSet.current = true;
-  }, [pages.length, setScale]);
+  }, [pages, setScale]);
 
   function goToPage(pageNumber: number) {
     const el = document.getElementById(`page-${pageNumber}`);
@@ -61,6 +61,17 @@ export default function PdfViewer({ token }: Props) {
   async function handleSearch(term: string) {
     await search(term, pages);
   }
+
+  // 검색 결과가 나오면 첫 결과 페이지로 스크롤
+  useEffect(() => {
+    if (matches.length > 0) {
+      const targetPage = matches[0].pageIndex + 1;
+      const el = document.getElementById(`page-${targetPage}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'instant', block: 'start' });
+      }
+    }
+  }, [matches]);
 
   if (error) {
     return (
@@ -88,6 +99,10 @@ export default function PdfViewer({ token }: Props) {
         currentPage={currentPage}
         totalPages={totalPages}
         scale={scale}
+        searchCount={matches.reduce(
+          (sum, m) => sum + m.rawMatches.length,
+          0,
+        )}
         onZoomIn={zoomIn}
         onZoomOut={zoomOut}
         onGoToPage={goToPage}
