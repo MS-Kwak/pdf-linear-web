@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Turbopack 사용 (Next.js 16 기본값)
+  turbopack: {},
 };
 
 export default nextConfig;
