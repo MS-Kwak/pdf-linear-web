@@ -28,9 +28,10 @@ export default function PdfViewer({ token }: Props) {
   const [currentPage, setCurrentPage] = useState(1);
   const [tocOpen, setTocOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const initialScaleSet = useRef(false);
 
   useEffect(() => {
-    if (pages.length === 0) return;
+    if (pages.length === 0 || initialScaleSet.current) return;
 
     const page = pages[0];
     const naturalViewport = page.getViewport({ scale: 1.0 });
@@ -42,7 +43,8 @@ export default function PdfViewer({ token }: Props) {
       1.0,
     );
     setScale(fitScale);
-  }, [pages.length > 0]); // eslint-disable-line react-hooks/exhaustive-deps
+    initialScaleSet.current = true;
+  }, [pages.length, setScale]);
 
   function goToPage(pageNumber: number) {
     const el = document.getElementById(`page-${pageNumber}`);
