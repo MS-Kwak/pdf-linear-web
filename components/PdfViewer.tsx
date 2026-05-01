@@ -23,7 +23,7 @@ export default function PdfViewer({ token }: Props) {
     isLoading,
   } = usePdfLoader(token);
   const { scale, setScale, zoomIn, zoomOut } = useZoom(1.0);
-  const { matches, search, clearSearch } = useSearch();
+  const { matches, searching, search, clearSearch } = useSearch();
 
   const [currentPage, setCurrentPage] = useState(1);
   const [tocOpen, setTocOpen] = useState(false);
@@ -99,6 +99,7 @@ export default function PdfViewer({ token }: Props) {
         currentPage={currentPage}
         totalPages={totalPages}
         scale={scale}
+        searching={searching}
         searchCount={matches.reduce(
           (sum, m) => sum + m.rawMatches.length,
           0,
@@ -122,38 +123,37 @@ export default function PdfViewer({ token }: Props) {
         }}
       />
 
-      <div ref={containerRef} className="pt-12 pb-8 px-2">
-        {pages.map((page, i) => {
-          const pageNumber = i + 1;
-          return (
-            <PdfPage
-              key={pageNumber}
-              page={page}
-              pageNumber={pageNumber}
-              scale={scale}
-              searchMatches={matches.find((m) => m.pageIndex === i)}
-              onVisible={handlePageVisible}
-            />
-          );
-        })}
+      <div ref={containerRef} className="pt-12 pb-8 overflow-x-auto">
+        <div className="min-w-fit px-2">
+          {pages.map((page, i) => {
+            const pageNumber = i + 1;
+            return (
+              <PdfPage
+                key={pageNumber}
+                page={page}
+                pageNumber={pageNumber}
+                scale={scale}
+                searchMatches={matches.find((m) => m.pageIndex === i)}
+                onVisible={handlePageVisible}
+              />
+            );
+          })}
 
-        {loadedPages < totalPages &&
-          Array.from({ length: totalPages - loadedPages }).map(
-            (_, i) => (
-              <div
-                key={`skeleton-${i}`}
-                className="flex justify-center mb-4"
-              >
-                <div
-                  className="bg-gray-300 animate-pulse shadow-md"
-                  style={{
-                    width: Math.round(595 * scale),
-                    height: Math.round(842 * scale),
-                  }}
-                />
-              </div>
-            ),
-          )}
+          {loadedPages < totalPages &&
+            Array.from({ length: totalPages - loadedPages }).map(
+              (_, i) => (
+                <div key={`skeleton-${i}`} className="mb-4">
+                  <div
+                    className="bg-gray-300 animate-pulse shadow-md mx-auto"
+                    style={{
+                      width: Math.round(595 * scale),
+                      height: Math.round(842 * scale),
+                    }}
+                  />
+                </div>
+              ),
+            )}
+        </div>
       </div>
     </div>
   );

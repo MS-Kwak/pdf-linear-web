@@ -6,6 +6,7 @@ interface Props {
   currentPage: number;
   totalPages: number;
   scale: number;
+  searching: boolean;
   searchCount: number;
   onZoomIn: () => void;
   onZoomOut: () => void;
@@ -19,6 +20,7 @@ export default function Toolbar({
   currentPage,
   totalPages,
   scale,
+  searching,
   searchCount,
   onZoomIn,
   onZoomOut,
@@ -138,9 +140,9 @@ export default function Toolbar({
         >
           검색
         </button>
-        {searched && (
+        {(searched || searching) && (
           <span className="text-xs text-yellow-300">
-            {searchCount}건
+            {searching ? '검색중...' : `${searchCount}건`}
           </span>
         )}
         {searchInput && (

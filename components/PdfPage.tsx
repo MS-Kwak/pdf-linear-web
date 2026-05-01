@@ -119,11 +119,14 @@ export default function PdfPage({
     <div
       ref={containerRef}
       id={`page-${pageNumber}`}
-      className="flex justify-center mb-4"
+      className="mb-4"
       style={{ minHeight: cssHeight }}
     >
       {isNearViewport ? (
-        <div className="relative shadow-md">
+        <div
+          className="relative shadow-md mx-auto"
+          style={{ width: cssWidth }}
+        >
           <canvas ref={canvasRef} />
 
           {searchMatches?.rawMatches.map((match, i) => {
@@ -148,7 +151,7 @@ export default function PdfPage({
         </div>
       ) : (
         <div
-          className="bg-white shadow-md"
+          className="bg-white shadow-md mx-auto"
           style={{ width: cssWidth, height: cssHeight }}
         />
       )}

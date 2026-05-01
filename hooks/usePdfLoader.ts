@@ -1,21 +1,21 @@
-"use client";
+'use client';
 
-import { useEffect, useRef, useState } from "react";
-import type { PDFDocumentProxy, PDFPageProxy } from "pdfjs-dist";
+import { useEffect, useRef, useState } from 'react';
+import type { PDFDocumentProxy, PDFPageProxy } from 'pdfjs-dist';
 
 export interface PdfState {
   doc: PDFDocumentProxy | null;
-  pages: PDFPageProxy[];        // 렌더링 완료된 페이지 객체 배열
+  pages: PDFPageProxy[]; // 렌더링 완료된 페이지 객체 배열
   totalPages: number;
-  loadedPages: number;          // 현재까지 로드된 페이지 수
-  outline: OutlineItem[];       // 목차
+  loadedPages: number; // 현재까지 로드된 페이지 수
+  outline: OutlineItem[]; // 목차
   error: string | null;
   isLoading: boolean;
 }
 
 export interface OutlineItem {
   title: string;
-  dest: unknown;                // PDF.js outline destination
+  dest: unknown; // PDF.js outline destination
   items?: OutlineItem[];
 }
 
@@ -42,12 +42,14 @@ export function usePdfLoader(token: string | null) {
 
       try {
         // pdfjs-dist는 브라우저 전용이라 동적으로 import
-        const pdfjsLib = await import("pdfjs-dist");
+        const pdfjsLib = await import('pdfjs-dist');
 
         // worker 경로 지정 (next.config.ts에서 public에 복사한 파일)
-        pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+          '/pdf.worker.min.mjs';
 
-        const wasUrl = process.env.NEXT_PUBLIC_WAS_URL || "http://localhost:3001";
+        const wasUrl =
+          process.env.NEXT_PUBLIC_WAS_URL || 'http://localhost:3001';
         const pdfUrl = `${wasUrl}/pdf/${token}`;
 
         // PDF.js에 URL을 주면, 내부적으로 Range Request를 보내서
@@ -55,6 +57,9 @@ export function usePdfLoader(token: string | null) {
         const loadingTask = pdfjsLib.getDocument({
           url: pdfUrl,
           withCredentials: false,
+          cMapUrl:
+            'https://cdn.jsdelivr.net/npm/pdfjs-dist@5.7.284/cmaps/',
+          cMapPacked: true,
         });
 
         const doc = await loadingTask.promise;
@@ -87,7 +92,8 @@ export function usePdfLoader(token: string | null) {
           }));
         }
       } catch (err) {
-        const message = err instanceof Error ? err.message : "PDF 로드 실패";
+        const message =
+          err instanceof Error ? err.message : 'PDF 로드 실패';
         setState((prev) => ({
           ...prev,
           error: message,
