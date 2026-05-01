@@ -19,6 +19,7 @@ export default function PdfViewer({ token }: Props) {
     totalPages,
     loadedPages,
     outline,
+    textCache,
     error,
     isLoading,
   } = usePdfLoader(token);
@@ -46,6 +47,19 @@ export default function PdfViewer({ token }: Props) {
     initialScaleSet.current = true;
   }, [pages, setScale]);
 
+  // scale 변경 시 현재 페이지 위치 유지
+  const prevScaleRef = useRef(scale);
+  useEffect(() => {
+    if (!initialScaleSet.current) return;
+    if (prevScaleRef.current === scale) return;
+    prevScaleRef.current = scale;
+
+    const el = document.getElementById(`page-${currentPage}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'instant', block: 'start' });
+    }
+  }, [scale]); // eslint-disable-line react-hooks/exhaustive-deps
+
   function goToPage(pageNumber: number) {
     const el = document.getElementById(`page-${pageNumber}`);
     if (el) {
@@ -59,7 +73,7 @@ export default function PdfViewer({ token }: Props) {
   }, []);
 
   async function handleSearch(term: string) {
-    await search(term, pages);
+    await search(term, pages, textCache);
   }
 
   // 검색 결과가 나오면 첫 결과 페이지로 스크롤

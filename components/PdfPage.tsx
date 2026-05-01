@@ -120,7 +120,7 @@ export default function PdfPage({
       ref={containerRef}
       id={`page-${pageNumber}`}
       className="mb-4"
-      style={{ minHeight: cssHeight }}
+      style={{ minHeight: cssHeight, scrollMarginTop: 48 }}
     >
       {isNearViewport ? (
         <div
