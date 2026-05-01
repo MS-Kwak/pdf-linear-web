@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useEffect, useRef } from "react";
-import type { PDFPageProxy } from "pdfjs-dist";
-import type { RawMatch, SearchMatch } from "@/hooks/useSearch";
+import { useEffect, useRef } from 'react';
+import type { PDFPageProxy } from 'pdfjs-dist';
+import type { RawMatch, SearchMatch } from '@/hooks/useSearch';
 
 interface Props {
   page: PDFPageProxy;
@@ -19,7 +19,11 @@ interface Props {
  * Canvas 좌표계: 원점이 좌상단, y축 아래로 증가
  * viewport.transform이 이 변환을 처리해줌
  */
-function toViewportRect(match: RawMatch, viewportTransform: number[], scale: number): DOMRect {
+function toViewportRect(
+  match: RawMatch,
+  viewportTransform: number[],
+  scale: number,
+): DOMRect {
   const [a, b, c, d, e, f] = viewportTransform;
   const [, , , , px, py] = match.transform;
 
@@ -29,7 +33,10 @@ function toViewportRect(match: RawMatch, viewportTransform: number[], scale: num
 
   // 폰트 높이: transform의 수직 성분 크기
   // item.transform[3]이 0인 CID 폰트는 [0] 값을 사용
-  const fontUserH = Math.abs(match.transform[3]) || Math.abs(match.transform[0]) || 10;
+  const fontUserH =
+    Math.abs(match.transform[3]) ||
+    Math.abs(match.transform[0]) ||
+    10;
   const h = fontUserH * scale;
 
   // 아이템 전체 너비 → canvas 픽셀
@@ -49,7 +56,13 @@ function toViewportRect(match: RawMatch, viewportTransform: number[], scale: num
   return new DOMRect(rectX, baseY - h, Math.max(w, 6), h);
 }
 
-export default function PdfPage({ page, pageNumber, scale, searchMatches, onVisible }: Props) {
+export default function PdfPage({
+  page,
+  pageNumber,
+  scale,
+  searchMatches,
+  onVisible,
+}: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const renderTaskRef = useRef<{ cancel: () => void } | null>(null);
@@ -63,30 +76,39 @@ export default function PdfPage({ page, pageNumber, scale, searchMatches, onVisi
       (entries) => {
         if (entries[0].isIntersecting) onVisible(pageNumber);
       },
-      { threshold: 0.1 }
+      { threshold: 0.1 },
     );
 
     observer.observe(el);
     return () => observer.disconnect();
   }, [pageNumber, onVisible]);
 
-  // canvas에 PDF 페이지 렌더링
+  // canvas에 PDF 페이지 렌더링 (devicePixelRatio 반영하여 고해상도 렌더)
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     renderTaskRef.current?.cancel();
 
-    const viewport = page.getViewport({ scale });
+    const dpr = window.devicePixelRatio || 1;
+    const outputScale = Math.min(dpr, 3);
+    const renderScale = scale * outputScale;
+
+    const viewport = page.getViewport({ scale: renderScale });
     canvas.width = viewport.width;
     canvas.height = viewport.height;
+    canvas.style.width = `${Math.floor(viewport.width / outputScale)}px`;
+    canvas.style.height = `${Math.floor(viewport.height / outputScale)}px`;
 
     const task = page.render({ canvas, viewport });
     renderTaskRef.current = task;
 
     task.promise.catch((err) => {
-      if (err?.name !== "RenderingCancelledException") {
-        console.error(`[PdfPage] 렌더링 오류 (p.${pageNumber}):`, err);
+      if (err?.name !== 'RenderingCancelledException') {
+        console.error(
+          `[PdfPage] 렌더링 오류 (p.${pageNumber}):`,
+          err,
+        );
       }
     });
 
@@ -108,7 +130,11 @@ export default function PdfPage({ page, pageNumber, scale, searchMatches, onVisi
 
         {/* scale 바뀔 때마다 현재 viewport로 재계산 → zoom 시에도 정확한 위치 */}
         {searchMatches?.rawMatches.map((match, i) => {
-          const rect = toViewportRect(match, viewportTransform, scale);
+          const rect = toViewportRect(
+            match,
+            viewportTransform,
+            scale,
+          );
           return (
             <div
               key={i}

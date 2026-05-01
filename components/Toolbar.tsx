@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useState, FormEvent, KeyboardEvent } from "react";
+import { useState, FormEvent, KeyboardEvent } from 'react';
 
 interface Props {
   currentPage: number;
@@ -25,8 +25,8 @@ export default function Toolbar({
   onClearSearch,
   onToggleToc,
 }: Props) {
-  const [pageInput, setPageInput] = useState("");
-  const [searchInput, setSearchInput] = useState("");
+  const [pageInput, setPageInput] = useState('');
+  const [searchInput, setSearchInput] = useState('');
 
   function handlePageSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -34,7 +34,7 @@ export default function Toolbar({
     if (num >= 1 && num <= totalPages) {
       onGoToPage(num);
     }
-    setPageInput("");
+    setPageInput('');
   }
 
   function handleSearchSubmit(e: FormEvent<HTMLFormElement>) {
@@ -45,8 +45,8 @@ export default function Toolbar({
   }
 
   function handleSearchKeyDown(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Escape") {
-      setSearchInput("");
+    if (e.key === 'Escape') {
+      setSearchInput('');
       onClearSearch();
     }
   }
@@ -66,11 +66,19 @@ export default function Toolbar({
       <div className="w-px h-5 bg-gray-500" />
 
       {/* 확대/축소 */}
-      <button onClick={onZoomOut} className="px-2 py-1 rounded hover:bg-gray-600 text-lg font-bold">
+      <button
+        onClick={onZoomOut}
+        className="px-2 py-1 rounded hover:bg-gray-600 text-lg font-bold"
+      >
         −
       </button>
-      <span className="text-sm w-12 text-center">{Math.round(scale * 100)}%</span>
-      <button onClick={onZoomIn} className="px-2 py-1 rounded hover:bg-gray-600 text-lg font-bold">
+      <span className="text-sm w-12 text-center">
+        {Math.round(scale * 100)}%
+      </span>
+      <button
+        onClick={onZoomIn}
+        className="px-2 py-1 rounded hover:bg-gray-600 text-lg font-bold"
+      >
         ＋
       </button>
 
@@ -78,7 +86,10 @@ export default function Toolbar({
       <div className="w-px h-5 bg-gray-500" />
 
       {/* 페이지 이동 */}
-      <form onSubmit={handlePageSubmit} className="flex items-center gap-1 text-sm">
+      <form
+        onSubmit={handlePageSubmit}
+        className="flex items-center gap-1 text-sm"
+      >
         <input
           type="number"
           value={pageInput}
@@ -95,7 +106,10 @@ export default function Toolbar({
       <div className="w-px h-5 bg-gray-500" />
 
       {/* 검색 */}
-      <form onSubmit={handleSearchSubmit} className="flex items-center gap-1">
+      <form
+        onSubmit={handleSearchSubmit}
+        className="flex items-center gap-1"
+      >
         <input
           type="search"
           value={searchInput}
@@ -103,12 +117,21 @@ export default function Toolbar({
           onKeyDown={handleSearchKeyDown}
           placeholder="검색"
           enterKeyHint="search"
-          className="bg-gray-700 text-white rounded px-2 py-0.5 text-sm w-36"
+          className="bg-gray-700 text-white rounded px-2 py-0.5 text-sm w-28"
         />
+        <button
+          type="submit"
+          className="bg-blue-600 hover:bg-blue-500 text-white text-sm px-2 py-0.5 rounded"
+        >
+          검색
+        </button>
         {searchInput && (
           <button
             type="button"
-            onClick={() => { setSearchInput(""); onClearSearch(); }}
+            onClick={() => {
+              setSearchInput('');
+              onClearSearch();
+            }}
             className="text-gray-400 hover:text-white text-sm"
           >
             ✕
