@@ -108,9 +108,12 @@ export function usePdfLoader(token: string | null) {
           } catch {
             textCache.push({ pageIndex: i, text: '' });
           }
-        }
 
-        setState((prev) => ({ ...prev, textCache }));
+          // 10페이지마다 중간 업데이트 (진행 상황 확인용)
+          if ((i + 1) % 10 === 0 || i === pages.length - 1) {
+            setState((prev) => ({ ...prev, textCache: [...textCache] }));
+          }
+        }
       } catch (err) {
         const message =
           err instanceof Error ? err.message : 'PDF 로드 실패';
