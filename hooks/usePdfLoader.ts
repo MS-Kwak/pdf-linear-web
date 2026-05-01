@@ -50,7 +50,11 @@ export function usePdfLoader(token: string | null) {
       try {
         const pdfjsLib = await import('pdfjs-dist');
 
-        pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+        if (!isIOS) {
+          pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+        }
 
         const wasUrl =
           process.env.NEXT_PUBLIC_WAS_URL || 'http://localhost:3001';

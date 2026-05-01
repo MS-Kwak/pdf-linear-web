@@ -59,22 +59,34 @@ export default function PdfPage({
   const cssWidth = Math.floor(viewport.width);
   const cssHeight = Math.floor(viewport.height);
 
-  // 뷰포트 근처(위아래 1000px)에 있는 페이지만 렌더링
+  // 렌더링용: 뷰포트 근처(위아래 1000px)
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
-        const entry = entries[0];
-        if (entry.isIntersecting) {
-          setIsNearViewport(true);
-          onVisible(pageNumber);
-        } else {
-          setIsNearViewport(false);
-        }
+        setIsNearViewport(entries[0].isIntersecting);
       },
       { rootMargin: '1000px 0px' },
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // 페이지 번호 감지용: 화면에 50% 이상 보일 때만
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          onVisible(pageNumber);
+        }
+      },
+      { threshold: 0.5 },
     );
 
     observer.observe(el);
