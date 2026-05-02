@@ -16,6 +16,7 @@ export interface RawMatch {
 export interface SearchMatch {
   pageIndex: number;
   rawMatches: RawMatch[];
+  serverMatchCount?: number; // 서버 검색일 때만 있음 (위치 하이라이트 없이 건수만)
 }
 
 interface TextItem {
@@ -28,6 +29,53 @@ interface TextItem {
   hasEOL: boolean;
 }
 
+interface ServerSearchResult {
+  pageIndex: number;
+  matchCount: number;
+  preview: string;
+}
+
+interface ServerSearchResponse {
+  totalCount: number;
+  results: ServerSearchResult[];
+}
+
+// iOS Safari는 pdf.js 텍스트 추출이 불안정해서 서버 검색 사용
+function isIOS(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  return /iPad|iPhone|iPod/.test(navigator.userAgent);
+}
+
+/**
+ * 서버 사이드 검색 (WAS가 미리 추출한 텍스트에서 검색)
+ * iOS Safari처럼 클라이언트 텍스트 추출이 불안정한 환경용.
+ * 위치 하이라이트는 없지만, 매치된 페이지 번호와 건수는 정확함.
+ */
+async function searchOnServer(
+  token: string,
+  query: string,
+): Promise<SearchMatch[]> {
+  const wasUrl = process.env.NEXT_PUBLIC_WAS_URL || 'http://localhost:3001';
+
+  const res = await fetch(`${wasUrl}/search`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, query }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`서버 검색 실패: ${res.status}`);
+  }
+
+  const data: ServerSearchResponse = await res.json();
+
+  return data.results.map((r) => ({
+    pageIndex: r.pageIndex,
+    rawMatches: [],
+    serverMatchCount: r.matchCount,
+  }));
+}
+
 export function useSearch() {
   const [query, setQuery] = useState('');
   const [matches, setMatches] = useState<SearchMatch[]>([]);
@@ -38,6 +86,7 @@ export function useSearch() {
       term: string,
       pages: PDFPageProxy[],
       textCache?: PageTextCache[],
+      token?: string,
     ) => {
       setQuery(term);
 
@@ -47,19 +96,34 @@ export function useSearch() {
       }
 
       setSearching(true);
+
+      // iOS는 항상 서버 검색 우선 시도
+      if (isIOS() && token) {
+        try {
+          const serverResults = await searchOnServer(token, term);
+          setMatches(serverResults);
+          setSearching(false);
+          return;
+        } catch (err) {
+          console.warn('[useSearch] 서버 검색 실패, 클라이언트 검색으로 폴백:', err);
+        }
+      }
+
       const results: SearchMatch[] = [];
       const lower = term.toLowerCase();
 
       for (let i = 0; i < pages.length; i++) {
         const page = pages[i];
 
-      // 캐시된 텍스트로 먼저 해당 페이지에 매치가 있는지 빠르게 확인
-      const cached = textCache?.find((c) => c.pageIndex === i);
-      if (cached && cached.text.length > 0 && !cached.text.toLowerCase().includes(lower)) {
-        continue; // 이 페이지에는 확실히 매치 없음 → 건너뛰기
-      }
+        const cached = textCache?.find((c) => c.pageIndex === i);
+        if (
+          cached &&
+          cached.text.length > 0 &&
+          !cached.text.toLowerCase().includes(lower)
+        ) {
+          continue;
+        }
 
-        // 매치가 있거나 캐시가 없는 경우, 상세 위치 추출을 위해 getTextContent 호출
         let textContent;
         try {
           textContent = await Promise.race([
@@ -69,7 +133,6 @@ export function useSearch() {
             ),
           ]);
         } catch {
-          // getTextContent 실패 시 캐시 텍스트로 간단 매치 (위치 하이라이트 없이 건수만)
           if (cached && cached.text.toLowerCase().includes(lower)) {
             const lowerCached = cached.text.toLowerCase();
             let count = 0;
@@ -79,7 +142,7 @@ export function useSearch() {
               pos++;
             }
             if (count > 0) {
-              results.push({ pageIndex: i, rawMatches: [] });
+              results.push({ pageIndex: i, rawMatches: [], serverMatchCount: count });
             }
           }
           continue;
@@ -116,10 +179,7 @@ export function useSearch() {
             if (end <= pos || start >= matchEnd) continue;
 
             const charStart = Math.max(0, pos - start);
-            const charEnd = Math.min(
-              item.str.length,
-              matchEnd - start,
-            );
+            const charEnd = Math.min(item.str.length, matchEnd - start);
 
             pageRawMatches.push({
               transform: [...item.transform],
@@ -136,6 +196,20 @@ export function useSearch() {
 
         if (pageRawMatches.length > 0) {
           results.push({ pageIndex: i, rawMatches: pageRawMatches });
+        }
+      }
+
+      // 클라이언트 검색 결과가 0건이고 iOS가 아닌 경우에도 token이 있으면 서버 검색 폴백
+      if (results.length === 0 && token) {
+        try {
+          const serverResults = await searchOnServer(token, term);
+          if (serverResults.length > 0) {
+            setMatches(serverResults);
+            setSearching(false);
+            return;
+          }
+        } catch {
+          // 무시
         }
       }
 

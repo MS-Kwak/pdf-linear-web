@@ -73,7 +73,7 @@ export default function PdfViewer({ token }: Props) {
   }, []);
 
   async function handleSearch(term: string) {
-    await search(term, pages, textCache);
+    await search(term, pages, textCache, token);
   }
 
   // 검색 결과가 나오면 첫 결과 페이지로 스크롤
@@ -109,19 +109,13 @@ export default function PdfViewer({ token }: Props) {
 
   return (
     <div className="bg-gray-200 min-h-screen">
-      {/* 디버그 정보 (테스트 후 삭제) */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-black/80 text-green-400 text-xs p-2 font-mono leading-relaxed">
-        <div>pages:{pages.length} | cache:{textCache.length} | searching:{String(searching)} | matches:{matches.length}</div>
-        <div>p1text: &quot;{textCache[0]?.text.slice(0, 50) || '(empty)'}&quot;</div>
-      </div>
-
       <Toolbar
         currentPage={currentPage}
         totalPages={totalPages}
         scale={scale}
         searching={searching}
         searchCount={matches.reduce(
-          (sum, m) => sum + m.rawMatches.length,
+          (sum, m) => sum + (m.serverMatchCount ?? m.rawMatches.length),
           0,
         )}
         onZoomIn={zoomIn}
