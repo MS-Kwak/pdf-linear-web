@@ -33,6 +33,7 @@ interface ServerSearchResult {
   pageIndex: number;
   matchCount: number;
   preview: string;
+  rawMatches: RawMatch[];
 }
 
 interface ServerSearchResponse {
@@ -71,7 +72,7 @@ async function searchOnServer(
 
   return data.results.map((r) => ({
     pageIndex: r.pageIndex,
-    rawMatches: [],
+    rawMatches: r.rawMatches ?? [],
     serverMatchCount: r.matchCount,
   }));
 }
